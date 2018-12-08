@@ -1,0 +1,570 @@
+---
+title: "R for NYC Housing Data Analysis"
+description: |
+  A workshop for Housing Data Coalition on using R to analyze NYC housing data 
+author:
+  - name: Maxwell Austensen
+    url: https://github.com/austensen
+date: "2018-12-08"
+output: 
+    radix::radix_article:
+      toc: true
+      toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+# This sets some options for how this article will be rendered
+knitr::opts_chunk$set(echo = TRUE, rows.print=5)
+options(tibble.max_extra_cols = 5, tibble.print_max = 5)
+```
+
+> All the code for this article is available in this [RStudio Cloud project](https://rstudio.cloud/project/152011) and in this [GitHub repo](https://github.com/austensen/hdc-r-workshop)
+
+---
+
+# R
+
+[R](https://www.r-project.org/) is a free and open-source software environment for statistical computing and graphics. It has a more narrow set of uses and a smaller user base compared python, but because it is specifically designed for data analysis it is a great language for data analysts to learn. In recent years it has become increasingly popular and has also become much easier to learn, especially for those new to coding. 
+
+There are three main reasons that I enjoying using R myself and teaching it to others. 
+
+1. R has an amazing community of users that have produced wealth of user friendly guides, documentation, and other tools and resources to support people learning the language. 
+2. [RStudio](https://www.rstudio.com/products/rstudio/) is an incredibly helpful application (Integrated Development Environment) in which you can work with R. 
+3. A wide ecosystem of user-written packages that provide tools for almost every possible use case. Especially important is the collection of packages known as the _Tidyverse_ that prioritize good design and documentation that make it easy to learn R.
+
+## R Community Resources
+
+Here is just a small sample of some of the great resources available for learning R:
+
+* [R for Data Science](http://r4ds.had.co.nz/), a wonderful free book that provides a good introduction to R for data analysis
+* [Tidyverse packages website](http://Tidyverse.org) provides comprehensive documentation for all packages, including helpful guides and examples
+* [Stat545](http://stat545.com/index.html), a university course on data science with R that shares most of the materials
+* RStudio [webinars](https://www.rstudio.com/resources/webinars/), [online learning materials](https://www.rstudio.com/online-learning/), and [cheatsheets](https://www.rstudio.com/resources/cheatsheets/)
+* [RStudio Community](https://community.rstudio.com/), a friendlier version of StackOverflow dedicated to R and RStudio packages
+* [StackOverflow for R](https://stackoverflow.com/questions/tagged/r)
+* [DataCamp](https://www.datacamp.com/courses/tech:r) courses on R
+
+
+## RStudio
+
+The [RStudio Desktop](https://www.rstudio.com/products/rstudio/#Desktop) application is free to download. They also now provide [Rstudio Cloud](https://rstudio.cloud) as a free service that works just like RStudio Desktop but it is all accessed through the browser and requires no installation. We'll be using RStudio Cloud this for this workshop, and you can get started by opening this [RStudio Cloud project](https://rstudio.cloud/project/152011) and making a permanent copy in your own work space.
+
+This is the default RStudio interface. 
+* The top left pane contains all your code files. This is where you can write and save all the code for your analysis. 
+* The bottom left pane has the R console where you can run individual pieces of R code, such as quick calculations, printing objects, or anything else that you don't need to save in your final files.
+* The top right pane contains a list of all the objects currently in your environment. If you click on a dataframe object it will open in a viewer in the top left pane where you can browse, sort, and filter your view of the data (without altering the object itself)
+* The bottom right pane contains a few important tabs: the plot viewer where any graphs you create will appear, the files explorer, and the help page
+
+```{r echo=FALSE}
+knitr::include_graphics("img/rstudio-screenshot.png")
+```
+
+
+
+## Packages in R
+
+### Installing and Loading Packages
+
+R is an open-source language so in addition to the basic functions that come standard with R (referred to as _Base R_) there are more than 10,000 user written packages that can accomplish virtually any task in R. There is an official repository for these packages called CRAN that does some vetting of the quality of packages, and packages from here can be installed directly from R using:
+
+```{r eval=FALSE}
+install.packages("PackageName")
+```
+
+These packages only need to be installed like this once, and after that initial installation we only need to load the packages that we want use for each analysis with `library()`. 
+
+<aside>
+If you are working in a copy of [this RStudio Cloud project](https://rstudio.cloud/project/152011) all of the necessary packages have already been installed.
+</aside>
+
+### _Tidyverse_ Packages
+
+All of the packages we are using here are part of a collection of R packages referred to as the [`tidyverse`](https://www.tidyverse.org/). 
+
+> The Tidyverse is an opinionated collection of R packages designed for data science. All packages share an underlying design philosophy, grammar, and data structures. 
+
+All of these packages are extremely well-maintained and have helpful websites that include, examples and guides, function documentation, cheatsheets, and links to the GitHub repos where the packages are developed. 
+
+The following are the core set of Tidyverse packages, but there are [many more](https://www.tidyverse.org/packages/).
+
+* [`dplyr`](https://dplyr.Tidyverse.org) is a grammar of data manipulation, providing a consistent set of verbs that help you solve the most common data manipulation challenges
+* [`readr`](https://readr.Tidyverse.org) provides a fast and friendly way to read rectangular data (like csv, tsv, and fwf)
+* [`tidyr`](https://tidyr.Tidyverse.org) helps you create tidy data. Tidy data is data where: Each variable is in a column, each observation is a row, and each value is a cell
+* [`stringr`](https://stringr.Tidyverse.org) provides a cohesive set of functions designed to make working with strings as easy as possible
+* [`forcats`](https://forcats.Tidyverse.org) provides a suite of useful tools that solve common problems with factors
+* [`purrr`](https://purrr.Tidyverse.org) is a complete and consistent set of tools for working with functions and vectors
+* [`ggplot2`](https://ggplot2.Tidyverse.org) is a system for declaratively creating graphics, based on The Grammar of Graphics
+
+In addition to the package websites, there is an amazing free book that covers how to use all these packages to do data analysis, called [*R for Data Science*](http://r4ds.had.co.nz/).
+
+<aside>
+There is a `tidyverse` package that loads all seven of these core packages.
+</aside>
+
+
+```{r message=FALSE}
+library(dplyr) # manipulate dataframes
+library(readr) # read/write dataframes
+library(tidyr) # reshapeing dataframes
+library(stringr) # string manipulation
+library(forcats) # factor manipulation
+library(purrr) # iteration (instead of loops)
+library(ggplot2) # making plots
+```
+
+
+# Landlord Watchlist Buildings
+
+We'll be using a dataset of buildings from the Public Advocate's [NYC Landlord Watchlist](http://landlordwatchlist.com/).  
+
+## Import and Preview Dataset
+
+`read_csv()` guesses about the data type of each column, and gives you the column specification is used. Often times this will be what you want, but if you want to override the guesses you can supply your own specification. 
+
+<aside>
+In R the (admittedly quirky) convention is to use `<-` as the assignment operator instead of `=`.
+</aside>
+
+```{r}
+watchlist_bldgs <- read_csv("data/landlord-watchlist-buildings_2018-12-08.csv")
+```
+
+```{r}
+watchlist_bldgs <- read_csv(
+  file = "data/landlord-watchlist-buildings_2018-12-08.csv",
+  col_types = cols(
+    .default = col_character(),
+    units = col_integer(),
+    violations = col_integer()
+  )
+)
+```
+
+Now let's take a look at this new dataframe that we've imported. You can print the dataframe to get a simple preview.
+
+<aside>
+In R when you run code with just an object it is printed to the console the same as if the `print()` function was used.
+</aside>
+
+```{r}
+watchlist_bldgs
+```
+
+When simply printing the dataframe you'll only see a few rows and as many columns as fit nicely on your screen. When you have many columns it's often helpful to use the function `glimpse()` to see a list of all your columns.
+
+```{r}
+glimpse(watchlist_bldgs)
+```
+
+<aside>
+In RStudio you can also use `View()` to open an window where you can interactively view your dataframe, and even sort and filter that view (without changing the dataframe).
+</aside>
+
+
+# Data Manipulation with `dplyr`
+
+The package `dplyr` contains functions for basic data manipulation. It is organized around 5 main functions that take a dataframe and manipulate it in some way. The functions are named as verbs which help explain what they do.
+
+* [`filter()`](https://dplyr.Tidyverse.org/reference/filter.html) - filter to the rows you want to keep based on conditions
+* [`select()`](https://dplyr.Tidyverse.org/reference/select.html) - select columns you want to keep
+* [`arrange()`](https://dplyr.Tidyverse.org/reference/arrange.html) - sort dataframe by a column
+* [`mutate()`](https://dplyr.Tidyverse.org/reference/mutate.html) - adds new columns
+* [`summarise()`](https://dplyr.Tidyverse.org/reference/summarize.html) - collapse multiple rows down to a single one
+
+Every one of these functions takes a dataframe as the first argument and returns an altered version of that dataframe.
+
+Inside of these functions columns are referred to with just their names without quotes.
+
+<aside>
+Because we are not assigning the resulting modified dataset to an object the result is simply printed without being saved anywhere
+</aside>
+
+## `filter()`
+
+Use `filter()` find rows/cases where conditions are true. Rows where the condition evaluates to `NA` are dropped.
+
+```{r}
+bk_bldgs <- filter(watchlist_bldgs, borough == "BROOKLYN")
+
+bk_bldgs
+```
+
+Multiple conditions are combined with `&`.
+
+```{r}
+bk_big_bldgs <- filter(watchlist_bldgs, units > 10, borough == "QUEENS")
+
+bk_big_bldgs
+```
+
+
+## `select()`
+
+Use `select()` to keep or drop columns. You can either specify a set of variables to keep by listing them, or specify columns to be dropped with `-`. 
+
+<aside>
+If we don't assign the resulting of a function to an object the result is simply printed but not saved anywhere.
+</aside>
+
+```{r}
+select(watchlist_bldgs, landlord, borough, units)
+
+select(watchlist_bldgs, -landlord)
+```
+
+You can rename the columns that you are selecting within `select()`, or use `rename()` which keeps all columns. 
+
+```{r}
+select(watchlist_bldgs, borough_name = borough)
+
+rename(watchlist_bldgs, landlord_name = landlord)
+```
+
+## `mutate()`
+
+Use `mutate()` to add new columns to a dataset. `mutate()` keeps all the existing columns and adds new one to the end of the dataset, and the variant `transmute()` creates new columns but keeps only the new ones.
+
+```{r}
+mutate(watchlist_bldgs, landlord_lower = str_to_lower(landlord))
+
+transmute(watchlist_bldgs, violations_per_unit = violations / units)
+```
+
+## `arrange()`
+
+Use `arrange()` to add order the rows in your dataset by the values of one or more columns. Be default they will be in ascending order, and you can use `desc()` for descending order. 
+
+```{r}
+arrange(watchlist_bldgs, landlord, desc(units))
+```
+
+
+## `summarize()`
+
+You can use `summarize()` on a dataset to collapse down all the rows to a single row to calculate an aggregate statistic of one or more columns. It works in a similar way as `mutate()`, except whereas in mutate you can create new columns that are the same length as your existing dataset, with `summarise()` you will sum some sort of aggregate function (like `sum()`) that takes a column of multiple values and returns only one value.
+
+```{r}
+summarise(watchlist_bldgs, total_units = sum(units))
+```
+
+## `group_by()`
+
+The 6th function is `group_by()` and this doesn't change the contents of your dataframe, but instead affects how all of the above functions work if they are subsequently called on the dataframe. After a dataframe has been grouped by one or more columns, all functions apply to each group of rows in the dataset as if it was it's own dataset. `group_by()` is most commonly used with summarize. Alone `summarize()` will collapse a dataframe to a single row, but with a grouped dataframe it is collapsed down to one row _per group_. After you have finished with your grouped operations use `ungroup()` to make sure that it doesn't unintentionally alter later operations.
+
+
+```{r}
+boro_bldgs <- group_by(watchlist_bldgs, borough)
+boro_bldgs <- summarise(boro_bldgs, total_units = sum(units))
+boro_bldgs <- ungroup(boro_bldgs)
+
+boro_bldgs
+```
+
+
+## Data manipulation pipelines with `%>%` ("pipe")
+
+As you can see above when you want to make a series of changes to a dataframe you can end up repeating yourself a lot and overwriting a dataframe with each step. Thankfully there's a way to avoid this!
+
+The beauty of dplyr is that all of the functions above take a dataframe as the first argument, and return an altered version of that dataframe as the result. This allows us to start with a dataframe and link together multiple functions so that they each make a change to the dataframe then pass it along to the next function. `dplyr` includes a special operator, `%>%` (pronounced "pipe"), that allows us to chain together these function calls. When reading the code for these pipelines you can read `%>%` as "then".
+
+This `%>%` takes the object on the left and passes it to the function on the right as the first argument.
+
+For a simple example, let's look at the function `str_c()`, which concatenates strings together. Instead of passing `"a"` and `"b"` as the first and second argument, we can use the `%>%` to "pipe" the `"a"` into the function as the first argument and the `"b"` becomes the second argument. 
+
+```{r}
+str_c("a", "b")
+"a" %>% str_c("b")
+```
+
+Now let's practice putting together some of these dplyr functions into a little data manipulation pipeline by getting some information about the landlords on the watchlist and the buildings they own in Brooklyn. 
+
+The long pipeline of these `dplyr` functions can seem overwhelming at first, but once you get familiar with the functions you'll be able to read these code chunks like a little paragraph explaining the changes being made to a dataframe. To help illustrate this the following paragraph is a written explanation of every step of the accompanying block of code. 
+
+> We'll start with the full `watchlist_bldgs` dataset, then "pipe" (`%>%`) it into the next function to `filter` the dataset to just buildings where the `borough` is `"Brooklyn"`. Then we `mutate` the dataset to add a new column called `landlord_name` that is simply a more nicely-formatted version of the existing `landlord` column. Then we `select` only the columns that we need: `landlord_name`, `units`, and HPD `violations`. Then we `group_by` the new `landlord_name` column, and then, with the dataset grouped, we'll `summarize` the data across all buildings for each landlord to get some summary information about each landlord and their buildings in Brooklyn. Specifically, we'll `summarize` to get the total number of `buildings` using the special `n()` function that counts the number of rows, we'll also get the `total_units` by `sum`ming the units across all buildings for each landlord, and we'll get the `avg_bldg_size` of each landlord's Brooklyn buildings by taking the `mean` of units across their buildings. Similarly, we get the `sum` and `mean` of HPD `violations` for each landlord. We've now gone from a dataset in which each row represents a building to one in which each row is a landlord. Since we are done with our grouped operations we can `ungroup` the data, then finally we can `arrange` the dataset in `desc`ending order of the number of `buildings` the landlord owns in Brooklyn. After all of this our final resulting dataset is assigned to a new dataframe we'll call `bk_landlords`.
+
+```{r}
+bk_landlords <- watchlist_bldgs %>% 
+  filter(borough == "BROOKLYN") %>% 
+  mutate(landlord_name = str_to_title(landlord)) %>% 
+  select(landlord_name, units, violations) %>% 
+  group_by(landlord_name) %>% 
+  summarize(
+    buildings = n(),
+    total_units = sum(units),
+    avg_bldg_size = mean(units),
+    total_viol = sum(violations),
+    avg_bldg_viol = mean(violations)
+  ) %>% 
+  ungroup() %>% 
+  arrange(desc(buildings))
+
+bk_landlords
+```
+
+
+# Making graphs with `ggplot2`
+
+Now let's visualize this new dataset we've created using the package `ggplot2`.
+
+ggplot2 is designed to work with dataframe inputs, so the first step is always to use `ggplot(data = your_dataframe)`. You can build plots step by step by adding layers with `+`. The second step is always `aes()`, which establishes the *aes*thetics of the plot by mapping columns from the dataframe to aesthetic elements of the plot. For example, here we are setting the `x` axis values to landlord names and `y` to the total number of HPD violations. After the `aes` is set, you can use one of the many `geom_*()` functions to transform the aesthetics into a type of plot. In this case we want a column plot, so we use `geom_column()`. Finally, we can label any part of our graph with `labs()`.
+
+
+```{r, layout="l-body-outset"}
+ggplot(data = bk_landlords) +
+  aes(x = landlord_name, y = total_viol) +
+  geom_col() +
+  labs(
+    title = '"Worst" Landlords in Brooklyn',
+    subtitle = "Total HPD Violations in All Buildings for 2017",
+    x = NULL,
+    y = "Number of Violations",
+    caption = "Source: NYC Public Advocate's Landlord Watchlist"
+  )
+```
+
+With only the defaults ggplot2 graphs tend to look pretty good, and are not too difficult to create. However, there are definitely some things we'll want to improve with this graph. Luckily, there is a near-infinite amount of customization possible with ggplot2 to get the plot looking exactly the way you want.
+
+To start, there are clearly too many landlords to display clearly in a graph like this, so we can use dplyr to`arrange` the data by violations and `filter` to keep only the top 10 landlords. The first landlord name doesn't match the same format as the other, so let's remove the `" Properties"` part using `str_remove` from the `stringr` package. It would also be nice if the landlords were sorted in order of the number of violations. To achieve this we can change the `landlord_name` column from a string to instead use R's `factor` datatype, which allows us to specify an ordering to the values. Specifically, we'll use the function `fct_reorder()` from the package `forcats` to make the column a factor and put the values in order based on the values of the `total_viol` column. 
+
+Now we can use this new dataframe with ggplot2 and make a few more changes to improve the graph further. One obvious problem with our initial graph is that the landlord names are completely illegible due to overlap. To solve this we can use the ggplot2 function `coord_flip()` to flip our bars sideways so we can read the labels more cleanly. Another smaller adjustment we can make it to format the violation count labels on our y-axis. To make changes to anything related to one of the *aes*thetic elements of a plot we can use one of the many `scale_*_*` functions. The first `*` is always one of the `aes` element types, and the second `*` indicates the type of data that is mapped to it. In our case we want to make a change to the y axis and we've mapped our count of violations to `y` so it a continuous scale, so the function we'll want to use is `scale_y_continuous()`. Now within that function we'll want to use the formatting function `comma` from the `scales` package on our axis labels. Lastly, we can use one of the `theme_*` functions to apply some alternative styling to the plot. These functions provide you some helpful preset styling, but you can make your own fine-tuned adjustments using `theme()`. This can get a bit overwhelming, but just to illustrate what's possible, here we'll remove the unnecessary lines on the plot, move the landlord name labels over a bit, and change the font of the caption.
+
+<aside>
+If you have a package already installed, you can use a function from it without loading it with `library()` by using `package::function()`. Here we are doing this for `scales::comma` because we only use this single function from the package once.
+</aside>
+
+```{r layout="l-body-outset"}
+landlord_bk_10_worst <- bk_landlords %>% 
+  arrange(desc(total_viol)) %>% 
+  filter(row_number() <= 10) %>% 
+  mutate(
+    landlord_name = str_remove(landlord_name, " Properties"),
+    landlord_name = fct_reorder(landlord_name, total_viol)
+  )
+
+ggplot(data = landlord_bk_10_worst) +
+  aes(x = landlord_name, y = total_viol) +
+  geom_col() +
+  coord_flip() +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.y = element_blank(),
+    axis.text.y = element_text(margin = margin(r = -15)),
+    plot.caption = element_text(face = "italic", color = "darkgrey", margin = margin(t = 10))
+  ) +
+  labs(
+    title = '10 "Worst" Landlords in Brooklyn',
+    subtitle = "Total HPD Violations in All Buildings for 2017",
+    x = NULL,
+    y = "Number of Violations",
+    caption = "Source: NYC Public Advocate's Landlord Watchlist"
+  )
+```
+
+
+# Geocoding addresses with _Geoclient_ API
+
+To learn more about out our dataset of buildings we can join on additional information from other datasets. However we are missing an important column to allow us to join to other datasets. In NYC properties are identified in many administrative datasets by their tax lot identifiers know as Borough-Block-Lot (BBL), and if you have a BBL column it opens up lots of datasets bu out list of buildings is missing BBL. Luckily we do have the building addresses, and this allows us to use geocoding to get BBL (and other geographic information) using NYC's Geoclient API. 
+
+To access the Geoclient API in R we can use the [`geoclient`](https://github.com/austensen/geoclient) package. The first step is to set your API keys that allow us to use the API, for this we'll use `geoclient_api_keys` to set environment variables with our keys to that we only have to input the once. The `readRenviron()` just makes sure that after adding the new environment variables we have access to them now without having to restart R. To make sure that we aren't including private API keys in any public files we'll use the `getPass` package to create pop-up windows for us to input this information without writing it down in the code. 
+
+You can acquire your own Geoclient API credentials by first registering with the [NYC's Developer Portal](https://developer.cityofnewyork.us/user/register?destination=api), then [creating a new project](https://developer.cityofnewyork.us/create/project) and selecting "Geoclient v1" from available APIs. 
+
+<aside>
+The `geoclient` package is one that I wrote myself and it isn't published on the official R package repository, but can instead be installed directly from GitHub with the `remotes` package.
+</aside>
+
+<!--There's a weird problem with using these getPass tools when knitting the file so workaround is function containing secrets that are deleted right after using them so that aren't saved permanently in the project-->
+```{r include=FALSE}
+library(geoclient) 
+source("secrets.R") # git-ignored file
+set_geoclient_keys()
+
+# set_geoclient_keys <- function() {
+#   geoclient::geoclient_api_keys(
+#     id = "xxxxxxxx",
+#     key = "xxxxxxxxxxxxxxxxxxxxxxxx",
+#     install = TRUE,
+#     overwrite = TRUE
+#   )
+#   
+#   readRenviron("~/.Renviron")
+# }
+```
+
+```{r eval=FALSE}
+library(geoclient) # remotes::install_github("austensen/geoclient")
+
+geoclient_api_keys(
+  id = getPass::getPass("geoclient ID:"),
+  key = getPass::getPass("geoclient KEY:"),
+  install = TRUE,
+  overwrite = TRUE
+)
+
+readRenviron("~/.Renviron")
+```
+
+
+The Geoclient API allows for gecoding from a variety of input location types, and for each type there is an accompanying R function in the `geoclient` package. Here we want to geocode the building addesses so we'll start with the dataset of buildings and pipe it into the function `geo_address_data()` and speficy all the address compoenents that are required for the function. This will return a dataset, of the same length and in the same order s the input dataset, containing all the many geographic identifiers and other pieces of intormation returned by the API. For our purposes we're primarily interested in the BBL column, but wehile we're at it let's also keep some other geographic IDs and the latitude/longitude for each property, renaming some variables while we're selecting them.
+
+<aside>
+For more details on the geoclient package and it's functions see the [package website](https://austensen.github.io/geoclient/reference/index.html)
+</aside>
+
+<!--Already saved the data so we can just load it and avoid running the geocoding each time -->
+```{r include=FALSE}
+geo_info <- read_rds("data/geo_info.rds")
+```
+
+
+```{r eval=FALSE}
+geo_info <- watchlist_bldgs %>% 
+  geo_address_data(number, street, borough, zip) %>% 
+  select(
+    bbl, 
+    bin = buildingIdentificationNumber, 
+    tract_2010 = censusTract2010,
+    cd = communityDistrict,
+    nta,
+    lat = latitudeInternalLabel,
+    lng = longitudeInternalLabel
+  )
+```
+
+```{r}
+geo_info
+```
+
+Because the resulting dataframe is the exact same size and order as our input dataset we can simply bind the two datasets together side-by-side with dplyr's `bind_cols()`. 
+
+```{r}
+watchlist_bldgs_geos <- bind_cols(watchlist_bldgs, geo_info)
+
+watchlist_bldgs_geos
+```
+
+
+# Querying the _NYC-DB_ SQL Database
+
+Now that we have BBL for all our buildings we can link to other bbl-level datasets. [`NYC-DB`](https://github.com/aepyornis/nyc-db) is an incredible resource of NYC housing datasets that all contain BBL. 
+
+We'll start by connecting to the NYC-DB PostgreSQL database using the [`DBI`](https://dbi.r-dbi.org/) package.
+
+
+<!--There's a weird problem with using these getPass tools when knitting the file so workaround is function containing secrets that are deleted right after using them so that aren't saved permanently in the project-->
+```{r include=FALSE}
+library(DBI)
+source("secrets.R") # git-ignored file
+con <- connect_nyc_db()
+
+# connect_nyc_db <- function() {
+#   DBI::dbConnect(
+#     RPostgres::Postgres(),
+#     dbname = "nycdb",
+#     host = "xxxxxxxxxxxxxxxxxxxxx",
+#     port = 5432,
+#     user = "xxxxx",
+#     password = "xxxxx"
+#   )
+# }
+```
+
+
+```{r eval=FALSE}
+library(DBI)
+
+con <- dbConnect(
+  RPostgres::Postgres(),
+  user = getPass::getPass("NYC-DB USER:"),
+  password = getPass::getPass("NYC-DB PASSWORD:"),
+  host = getPass::getPass("NYC-DB HOST:"),
+  port = 5432,
+  dbname = "nycdb"
+)
+```
+
+To see all the tables available to use in NYC-DB we can use `dbListTables()`.
+
+```{r layout="l-body-outset"}
+dbListTables(con)
+```
+
+A great thing about dplyr is that it not only works on regular dataframes, but you can also use it with tables in a SQL database.
+To start working with a table in dplyr you use `tbl()` to connect to that table. 
+
+```{r}
+hpd_viol <- tbl(con, "hpd_violations")
+```
+
+This will now act like a regular dataframe, and we can print it to see the first few rows. 
+What it's actually doing is querying the table in the database and only retrieving these few preview rows and converting the data into an R dataframe.
+
+```{r}
+hpd_viol
+```
+
+Just like before we can also use `glimpse()` to get a better sense of the contents of the dataset.
+
+```{r}
+glimpse(hpd_viol)
+```
+
+We already have the total count of HPD violations in 2017 from the original dataset, but with NYC-DB we get more detailed information. Let's get the count of heat violations for the 2017-2018 heat season. Just like before we can build up our data manipulation using dplyr functions in a pipeline, and behind the scenes dplyr translates all these functions into SQL queries. We can use all the main dplyr functions, but for some specific tasks like writing conditions for `filter()` there may be things that aren't supported by dplyr's SQL translation. Luckily as a backup we can use the `sql()` function to insert raw SQL code into parts of our dplyr functions. Sometimes this is easier even when translations are possible. For example there is some SQL code borrowed from another project for identifying heat violations based on the notice of violation description text and filtering to the months of the heat season. We can paste that SQL code right into our filter statement along with our regular R code to filter for just our list of BBLs.
+
+
+We can use all the same dplyr functions to work with the table on the database. when you print it will just be a preview. You can do this to figure out how you want to extract the data. then use `collect()` to download the extract into a local dataset in R. behind the scenes dplyr is translating all these functions into SQL queries. You can see what it's doing with `show_query()`. 
+
+```{r}
+watchlist_bbls <- pull(watchlist_bldgs_geos, bbl)
+
+violation_bbls <- hpd_viol %>% 
+  filter(
+    bbl %in% watchlist_bbls, # only get the BBLs we need
+    sql("novdescription ~ '27-20(2[8-9]|3[0-3])'"), # heat violations
+    sql("novissueddate between '2017-10-01' and '2018-05-31'") # 2017-2018 heat season
+  ) %>% 
+  group_by(bbl) %>% 
+  summarise(heat_viols = n())
+
+violation_bbls
+```
+
+<aside>
+You can see behind the scenes at the SQL translation using `show_query()`. Alternatively, if you already know SQL you can just write the query yourself and use `dbGetQuery()`.
+</aside>
+
+Just like before when we printed the database table, when we print the result of this dplyr pipeline we are still only getting a preview of the full results. Once we are happy with how our query is looking an we're ready to download the full results into R we can use `collect()`. Now we can join the heat violations onto our existing dataframe of watchlist buildings.
+ 
+
+```{r}
+heat_violations <- collect(violation_bbls)
+
+watchlist_bldgs_geos_heat <- inner_join(watchlist_bldgs_geos, heat_violations, by = "bbl")
+```
+
+
+# Spatial Data in R
+
+We won't be able to cover spatial data in R in this workshop, but as a final example and preview of some of R's spatial functionality we can map a simple interactive map to visualize and explore the watchlist buildings. 
+
+There is a growing collection of packages for working with spatial data in R, largely organized around the [r-spatial](https://www.r-spatial.org/) group and the core package `sf`. `sf` has similar conventions as PostGIS and enables you to create spatial dataframes that are compatible with all the same dplyr functions we've been using above. 
+
+Here we'll just use `st_as_sf()` to convert our data into a spatial sf-dataframe by creating point geometries from the latitude and longitude coordinates we got from Geoclient, and because we are working with lat/lng we'll set the coordinate reference system (crs) to 4326. Now when we print the dataframe you see some additional metadata.
+
+```{r layout="l-body-outset"}
+library(sf)
+
+watchlist_bldgs_spatial <- st_as_sf(watchlist_bldgs_geos_heat, coords = c("lng", "lat"), crs = 4326)
+
+watchlist_bldgs_spatial
+```
+
+There is a [`leaflet`]() package that provides an R interface for creating interactive web maps with leaflet.js. We won't get into all the details of that package now, but instead will use the `mapview` package which quickly makes you a simple leaflet map and takes care of all the details. This is very useful for simply exploring the data when you aren't yet concerned about the visual presentation. 
+
+```{r layout="l-page"}
+library(mapview)
+
+mapview(watchlist_bldgs_spatial)
+```
+

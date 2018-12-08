@@ -1,0 +1,5 @@
+# HDC R Workshop
+
+All the contents of this repo are in this [RStudio Cloud project](https://rstudio.cloud/project/152011). To follow along with the workshop open the project link, create a RStudio Cloud account, and make a permanent copy of the project in your own workspace. This RStudio Cloud project already has all the data and code files included and all necessary R packages have already been installed.
+
+The primary material for the workshop is this [article](https://austensen.github.io/hdc-r-workshop). The code that produced the article is [workshop.Rmd](https://github.com/austensen/hdc-r-workshop/blob/master/workshop.Rmd). And the web-scraping code used to create the example dataset of buildings from the Public Advocate’s [NYC Landlord Watchlist](http://landlordwatchlist.com/) is [scrape_watchlist_buildings.R](https://github.com/austensen/hdc-r-workshop/blob/master/scrape_watchlist_buildings.R). All the packages you'll need to recreate everything are listed in [pkgs.R](https://github.com/austensen/hdc-r-workshop/blob/master/pkgs.R).
